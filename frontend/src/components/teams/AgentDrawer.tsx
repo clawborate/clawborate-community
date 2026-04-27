@@ -5,8 +5,9 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { api } from '@/lib/api'
 import { useLang } from '@/hooks/useLang'
 import type { Agent, AgentFiles } from '@/types'
+import GitCredentialsTab from '@/components/teams/GitCredentialsTab'
 
-type Tab = 'overview' | 'identity' | 'soul' | 'memory' | 'console' | 'llm'
+type Tab = 'overview' | 'identity' | 'soul' | 'memory' | 'console' | 'llm' | 'git'
 
 interface LogLine { timestamp: string; type: string; message: string }
 
@@ -260,6 +261,7 @@ export default function AgentDrawer({ agent, teamId, onClose }: Props) {
     { id: 'soul',     label: lang === 'zh' ? '灵魂' : 'Soul' },
     { id: 'memory',   label: lang === 'zh' ? '记忆' : 'Memory' },
     { id: 'llm',      label: 'LLM' },
+    { id: 'git',      label: 'Git' },
     { id: 'console',  label: lang === 'zh' ? '日志' : 'Console' },
   ]
 
@@ -685,6 +687,18 @@ export default function AgentDrawer({ agent, teamId, onClose }: Props) {
                   to { transform: rotate(360deg); }
                 }
               `}</style>
+            </div>
+          )}
+
+          {/* Git tab */}
+          {activeTab === 'git' && (
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+              <GitCredentialsTab teamId={teamId} agentId={agent.id} onToast={showToast} />
+              {toast && (
+                <div style={{ marginTop: 12, fontSize: 13, color: toast.includes('failed') || toast.includes('失败') ? 'var(--danger)' : 'var(--success)' }}>
+                  {toast}
+                </div>
+              )}
             </div>
           )}
 

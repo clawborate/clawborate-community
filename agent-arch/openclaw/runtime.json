@@ -41,5 +41,14 @@
     "openai": "OPENAI_BASE_URL",
     "ollama": "OLLAMA_BASE_URL",
     "ollama (local)": "OLLAMA_BASE_URL"
+  },
+
+  "git_credentials_injection": {
+    "_comment": "Per-agent git PAT delivery. 'host_file_ro' bind-mounts a per-agent host directory read-only into the container; backend writes the PAT (mode 0400, uid 1000) into a file inside, which the askpass shim reads at git-auth time. Survives container/host restart since the file persists on host disk. Other supported methods: 'tmpfs_exec' (in-memory, lost on restart), 'env_var_recreate' (recreates container), 'none' (opt out).",
+    "method": "host_file_ro",
+    "secret_dir_in_container": "/run/secrets",
+    "secret_filename": "git-pat",
+    "username_filename": "git-username",
+    "askpass_path_in_container": "/home/node/clawborate-data/agent/git-askpass.sh"
   }
 }

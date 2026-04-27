@@ -1,0 +1,52 @@
+## Git & GitHub Access
+
+You may have a per-agent git Personal Access Token (PAT) configured by the user.
+When configured, the following files are present inside your container:
+
+| File                          | Contents                          |
+|-------------------------------|-----------------------------------|
+| `/run/secrets/git-pat`        | The PAT (treat as secret)         |
+| `/run/secrets/git-username`   | Username (only when ≠ `git`)      |
+| `/run/secrets/git-repo-url`   | The repo URL the user configured  |
+
+**Always check for these files before assuming you have or lack git access.** A
+plain `ls /run/secrets/` tells you what's configured. If `git-pat` is missing,
+politely ask the user to set it via the **Git** tab in their AgentDrawer; do
+NOT try to use other credentials.
+
+### Cloning, pulling, pushing
+
+`GIT_ASKPASS` is pre-set, so plain git commands authenticate automatically — no
+manual auth step needed:
+
+```bash
+REPO=$(cat /run/secrets/git-repo-url)
+git clone "$REPO" /tmp/repo
+cd /tmp/repo && git pull
+```
+
+### GitHub REST API (issues, PRs, etc.)
+
+For anything that isn't a `git` operation — listing issues, reading PRs, opening
+issues — use the GitHub REST API with the PAT as a Bearer token:
+
+```bash
+PAT=$(cat /run/secrets/git-pat)
+REPO=$(cat /run/secrets/git-repo-url)
+# Parse owner/repo out of an https://github.com/<owner>/<repo>(.git) URL
+SLUG=$(echo "$REPO" | sed -E 's#https?://github.com/##; s#\.git$##')
+
+# List open issues
+curl -s -H "Authorization: Bearer $PAT" \
+     -H "Accept: application/vnd.github+json" \
+     "https://api.github.com/repos/$SLUG/issues?state=open"
+```
+
+**Never echo `$PAT` in your reply or write it to any file the user might see.**
+The Bearer header above is the only place it should appear.
+
+### When the user asks "what issues are open?" / "check the repo"
+
+1. Read `/run/secrets/git-repo-url` — that's the configured repo.
+2. Use the GitHub API call above (issues are an API thing, not a `git` thing).
+3. Summarise titles + numbers; offer to open one if the user is interested.

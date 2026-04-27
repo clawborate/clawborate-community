@@ -340,4 +340,25 @@ export const api = {
     request<{ status: string; message: string }>(`/settings/teams/${teamId}/agents/${agentId}/llm`, { method: 'PUT', body: JSON.stringify(data) }),
   resetAgentLLMConfig: (teamId: string, agentId: string) =>
     request<{ status: string; message: string }>(`/settings/teams/${teamId}/agents/${agentId}/llm`, { method: 'DELETE' }),
+
+  // ── Per-agent git credentials ──────────────────────────────────────────
+  getAgentGitCredentials: (teamId: string, agentId: string) =>
+    request<{ repo_url: string; username: string; pat_masked: string; is_set: boolean }>(
+      `/settings/teams/${teamId}/agents/${agentId}/git`,
+    ),
+  updateAgentGitCredentials: (teamId: string, agentId: string, data: { repo_url?: string; username?: string; pat: string }) =>
+    request<{ status: string; message: string }>(
+      `/settings/teams/${teamId}/agents/${agentId}/git`,
+      { method: 'PUT', body: JSON.stringify(data) },
+    ),
+  deleteAgentGitCredentials: (teamId: string, agentId: string) =>
+    request<{ status: string; message: string }>(
+      `/settings/teams/${teamId}/agents/${agentId}/git`,
+      { method: 'DELETE' },
+    ),
+  testAgentGitCredentials: (teamId: string, agentId: string) =>
+    request<{ status: 'ok' | 'auth_failed'; exit_code: number; output?: string }>(
+      `/settings/teams/${teamId}/agents/${agentId}/git/test`,
+      { method: 'POST' },
+    ),
 }
