@@ -1,0 +1,45 @@
+{
+  "_comment": "OpenClaw agent container runtime configuration. Defines how the backend launches agent containers. Deployment-specific secrets (API keys, tokens) are set in .env.community or via the Settings UI — not here.",
+
+  "image": "ghcr.io/openclaw/openclaw:2026.4.15",
+  "config_path": "/home/node/clawborate-data/agent/openclaw.json",
+  "port": 18789,
+
+  "reload": {
+    "_comment": "How to apply config changes to a running agent. 'put_archive' writes the config file via Docker API, then 'reload_command' is exec'd to force the gateway to pick up the new config.",
+    "method": "put_archive",
+    "target_path": "/home/node/clawborate-data/agent",
+    "config_file": "openclaw.json",
+    "reload_command": ["openclaw", "gateway", "restart"]
+  },
+
+  "volumes": {
+    "agent_workspace": "/home/node/clawborate-data/agent",
+    "team_shared": "/home/node/clawborate-data/shared",
+    "chat_history": "/home/node/chat_history.json"
+  },
+
+  "env": {
+    "_comment": "Static env vars injected into every agent container. OPENCLAW_CONFIG_PATH tells the agent where to find its config file. WORKER_API_URL and WORKER_API_TOKEN are resolved at runtime from .env.community (WORKER_1_URL, WORKER_1_TOKEN) or default to the backend's own address and gateway token.",
+    "OPENCLAW_CONFIG_PATH": "{config_path}",
+    "OPENCLAW_GATEWAY_TOKEN": "{OPENCLAW_GATEWAY_TOKEN}",
+    "WORKER_API_URL": "{WORKER_API_URL}",
+    "WORKER_API_TOKEN": "{WORKER_API_TOKEN}",
+    "TEAM_ID": "{team_id}"
+  },
+
+  "env_mapping": {
+    "_comment": "Maps LLM provider names (as configured in Settings UI) to the env var name the agent container expects. When the user sets an API key via the Settings page or .env.community, the backend injects it under the matching env var. For 'custom' providers, LLM_API_KEY is used as a generic fallback.",
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "custom": "LLM_API_KEY"
+  },
+
+  "base_url_mapping": {
+    "_comment": "Maps LLM provider names to the env var for custom base URLs. Set in .env.community (e.g. LLM_BASE_URL, OLLAMA_BASE_URL) or via Settings UI.",
+    "anthropic": "ANTHROPIC_BASE_URL",
+    "openai": "OPENAI_BASE_URL",
+    "ollama": "OLLAMA_BASE_URL",
+    "ollama (local)": "OLLAMA_BASE_URL"
+  }
+}

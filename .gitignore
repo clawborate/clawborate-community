@@ -1,0 +1,19 @@
+# Environment (contains secrets)
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend build artifacts
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# IDE
+.vscode/
+.idea/
+
+# Data
+*.log
+*.db

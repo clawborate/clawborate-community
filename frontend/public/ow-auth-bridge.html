@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Authenticating…</title></head>
+<body>
+<!--
+  P1-14: Auth bridge for Open WebUI iframe SSO.
+  This page is mounted into OW's static dir and served at the OW origin.
+  It reads ?token= from the URL, stores it in localStorage (same origin as OW),
+  then redirects to the actual OW page so SvelteKit finds the token on load.
+-->
+<script>
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var token = params.get('token');
+  if (token) {
+    localStorage.setItem('token', token);
+  }
+  // Build the redirect URL: strip the auth-bridge path, keep other params
+  params.delete('token');
+  var redirect = params.get('redirect') || '/';
+  params.delete('redirect');
+  var remaining = params.toString();
+  var url = redirect + (remaining ? (redirect.includes('?') ? '&' : '?') + remaining : '');
+  window.location.replace(url);
+})();
+</script>
+</body>
+</html>

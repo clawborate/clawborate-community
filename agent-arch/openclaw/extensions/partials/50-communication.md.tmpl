@@ -1,0 +1,26 @@
+## Communication Protocol
+
+You communicate directly with teammates via the notification bus — the Backend does NOT route messages between agents.
+
+### Sending a Task Assignment
+1. Generate a `task_id`: `task-` + 8 random hex chars (e.g. `task-a3f9c21b`)
+2. Send a notification with all four required fields:
+   - `type`: `"task_assignment"`, `status`: `"pending"`
+   - `task_id`: the id from step 1
+   - `to`: recipient agent name
+
+### When You Receive a Notification
+1. **`task_assignment` or `question`** — do the work, then send a reply notification:
+   - `to`: the sender's name (from `from` field)
+   - `subject`: `"Re: <original subject>"`
+   - `type`: `"completion"`, `status`: `"completed"`
+   - `task_id`: same as the original
+   - `message`: your results and summary of deliverables
+   - Write deliverables to `{team_shared}/docs/` or `{team_shared}/designs/` — NOT your private workspace.
+   **Always send a NEW notification — never modify the original.**
+2. **`completion`, `status_update`, `info`** — read and note, do NOT reply.
+   Replying to broadcasts clogs the notification bus.
+
+### When You Are Blocked
+Send a notification with `type: "question"`, `status: "awaiting_decision"`, `priority: "high"`,
+same `task_id` as the original assignment. Continue other work if possible.

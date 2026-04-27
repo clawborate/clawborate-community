@@ -1,0 +1,115 @@
+{
+  "_comment": "Custom seccomp profile for the Clawborate community backend container.",
+  "_comment2": "defaultAction=ALLOW with an explicit denylist of dangerous syscalls.",
+  "_comment3": "Blocks ptrace/debug injection, kernel module loading, namespace escapes,",
+  "_comment4": "reboot/kexec, raw hardware access, and eBPF. Safe for Python/FastAPI.",
+  "defaultAction": "SCMP_ACT_ALLOW",
+  "architectures": [
+    "SCMP_ARCH_X86_64",
+    "SCMP_ARCH_X86",
+    "SCMP_ARCH_X32",
+    "SCMP_ARCH_AARCH64"
+  ],
+  "syscalls": [
+    {
+      "_comment": "Block process-injection / debugging syscalls",
+      "names": [
+        "ptrace",
+        "process_vm_readv",
+        "process_vm_writev",
+        "kcmp"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 1
+    },
+    {
+      "_comment": "Block kernel module loading/unloading",
+      "names": [
+        "create_module",
+        "init_module",
+        "finit_module",
+        "delete_module",
+        "get_kernel_syms",
+        "query_module"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 1
+    },
+    {
+      "_comment": "Block system reboot and kernel-exec",
+      "names": [
+        "reboot",
+        "kexec_load",
+        "kexec_file_load"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 1
+    },
+    {
+      "_comment": "Block filesystem/namespace escape primitives",
+      "names": [
+        "mount",
+        "umount2",
+        "pivot_root",
+        "chroot",
+        "unshare"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 1
+    },
+    {
+      "_comment": "Block swap and accounting",
+      "names": [
+        "swapon",
+        "swapoff",
+        "acct",
+        "nfsservctl"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 1
+    },
+    {
+      "_comment": "Block raw system log access",
+      "names": [
+        "syslog"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 1
+    },
+    {
+      "_comment": "Block hostname/domain name changes (irreversible at container level)",
+      "names": [
+        "setdomainname",
+        "sethostname"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 1
+    },
+    {
+      "_comment": "Block eBPF (can be used for container escapes / side-channel attacks)",
+      "names": [
+        "bpf"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 1
+    },
+    {
+      "_comment": "Block perf events (side-channel / Spectre mitigations bypass)",
+      "names": [
+        "perf_event_open"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 1
+    },
+    {
+      "_comment": "Block raw clock/time source manipulation",
+      "names": [
+        "adjtimex",
+        "settimeofday",
+        "clock_adjtime"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 1
+    }
+  ]
+}

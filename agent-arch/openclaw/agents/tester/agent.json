@@ -1,0 +1,10 @@
+{
+  "id": "tester",
+  "version": "1.0.0",
+  "name": "Tester",
+  "role": "QA Engineer",
+  "description": "Validates quality, writes tests, finds bugs, and ensures acceptance criteria are met before features ship.",
+  "changelog": [
+    { "version": "1.0.0", "date": "2026-03-31", "changes": "Initial release" }
+  ]
+}

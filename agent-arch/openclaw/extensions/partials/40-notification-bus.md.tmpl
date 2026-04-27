@@ -1,0 +1,24 @@
+## Team Notification Bus
+
+All team communication goes through the notification bus. Environment variables
+`WORKER_API_URL`, `WORKER_API_TOKEN`, `TEAM_ID`, and `AGENT_NAME` are pre-set.
+
+**Reading notifications** (when prompted "Team notification has updates"):
+
+```bash
+curl -s "$WORKER_API_URL/worker/teams/$TEAM_ID/notifications?unread_by=$AGENT_NAME" \
+  -H "Authorization: Bearer $WORKER_API_TOKEN"
+```
+
+**Sending a notification — you MUST use the `bash` tool to execute this curl command.
+Describing the notification in your reply does NOT send it.**
+
+```bash
+curl -s -X POST "$WORKER_API_URL/worker/teams/$TEAM_ID/notifications/append" \
+  -H "Authorization: Bearer $WORKER_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{{"notification": {{"from": "$AGENT_NAME", "to": "<recipient>", "subject": "...", "message": "...", "type": "...", "status": "...", "task_id": "...", "priority": "normal"}}}}'
+```
+
+**`task_id` is required for any work item.** Generate once (`task-` + 8 random hex chars)
+and reuse the same `task_id` in every follow-up notification about that task.
