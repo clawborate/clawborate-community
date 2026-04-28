@@ -22,11 +22,13 @@ import LLMConfigTab from '@/components/dashboard/LLMConfigTab'
 import ChannelsTab from '@/components/dashboard/ChannelsTab'
 import FilesTab from '@/components/dashboard/FilesTab'
 import AgentDrawer from '@/components/teams/AgentDrawer'
+import DynamicUITab from '@/components/dashboard/DynamicUITab'
+import { useUITab } from '@/hooks/useUITab'
 import type { Team, Agent } from '@/types'
 
-type TabId = 'status' | 'members' | 'config' | 'files'
+type TabId = 'status' | 'members' | 'config' | 'files' | 'ui'
 
-const TABS: { id: TabId; zh: string; en: string }[] = [
+const STATIC_TABS: { id: TabId; zh: string; en: string }[] = [
   { id: 'status',   zh: '项目状态', en: 'Status'   },
   { id: 'members',  zh: '成员管理', en: 'Members'  },
   { id: 'config',   zh: '团队配置', en: 'Config'   },
@@ -60,10 +62,26 @@ export default function MainPanel({ team, onTeamDeleted, expertTrigger }: Props)
   const t = getT(lang)
   const [activeTab, setActiveTab] = useState<TabId>('status')
 
+  const { active: uiActive, title: uiTitle, content: uiContent } = useUITab(team?.id)
+
+  // The dynamic UI tab label is driven by the agent's `title:` frontmatter so
+  // the coordinator fully owns the tab name (e.g. "GitHub Dashboard"). Falls
+  // back to "UI" only when the MD has no title set.
+  const uiTabLabel = (uiTitle && uiTitle.trim()) || 'UI'
+  const TABS = [
+    ...STATIC_TABS,
+    ...(uiActive ? [{ id: 'ui' as const, zh: uiTabLabel, en: uiTabLabel }] : []),
+  ]
+
   // Switch to members tab when externally triggered (e.g. LeftNav Experts click)
   useEffect(() => {
     if (expertTrigger) setActiveTab('members')
   }, [expertTrigger])
+
+  // If the UI tab becomes inactive while the user is on it, fall back to status
+  useEffect(() => {
+    if (!uiActive && activeTab === 'ui') setActiveTab('status')
+  }, [uiActive, activeTab])
   const [drawerAgent, setDrawerAgent] = useState<Agent | null>(null)
 
   // Delete team modal
@@ -140,7 +158,8 @@ export default function MainPanel({ team, onTeamDeleted, expertTrigger }: Props)
 
       {/* Tab content */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-        {activeTab === 'status'   ? <StatusTab teamId={team.id} /> :
+        {activeTab === 'ui'       ? <DynamicUITab teamId={team.id} content={uiContent} /> :
+         activeTab === 'status'   ? <StatusTab teamId={team.id} /> :
          activeTab === 'members'  ? <MembersTab teamId={team.id} onAgentClick={agent => setDrawerAgent(agent)} expertTrigger={expertTrigger} /> :
          activeTab === 'files'    ? <FilesTab teamId={team.id} /> :
          activeTab === 'config'   ? (

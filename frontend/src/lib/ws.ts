@@ -322,6 +322,93 @@ export class NotificationWS {
   }
 }
 
+/**
+ * DynamicUIWS — WebSocket client for real-time UI.md state push.
+ *
+ * Connects to /api/ws/teams/{teamId}/ui.
+ * Backend pushes {"event": "ui_update", "active": bool, "content": str, "mtime": number}
+ * on connect and whenever UI.md changes (~10 s latency). No messages sent to server.
+ * Reconnects with exponential back-off (5 s → 60 s, max 10 attempts).
+ */
+
+export interface UIUpdateEvent {
+  event: 'ui_update'
+  active: boolean
+  content: string
+  mtime: number
+}
+
+export class DynamicUIWS {
+  private ws: WebSocket | null = null
+  private shouldConnect = false
+  private teamId = ''
+  private onUpdate: (update: UIUpdateEvent) => void = () => {}
+  private retryDelay = 5_000
+  private readonly maxRetryDelay = 60_000
+  private retries = 0
+  private readonly maxRetries = 10
+  private cachedToken: string | null = null
+
+  connect(teamId: string, onUpdate: (update: UIUpdateEvent) => void): void {
+    this.teamId = teamId
+    this.onUpdate = onUpdate
+    this.shouldConnect = true
+    this.retryDelay = 5_000
+    this.retries = 0
+    this._fetchTokenAndConnect()
+  }
+
+  private _fetchTokenAndConnect(): void {
+    if (typeof window === 'undefined') return  // SSR
+    fetch('/api/auth/ws-token')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((data: { token: string }) => {
+        this.cachedToken = data.token
+        if (this.shouldConnect) this._connect()
+      })
+      .catch(() => {
+        if (this.shouldConnect) this._connect()
+      })
+  }
+
+  private _connect(): void {
+    const path = this.cachedToken
+      ? `/api/ws/teams/${this.teamId}/ui?token=${encodeURIComponent(this.cachedToken)}`
+      : `/api/ws/teams/${this.teamId}/ui`
+    const url = _wsUrl(path)
+    if (!url) return
+
+    this.ws = new WebSocket(url)
+
+    this.ws.onopen = () => {
+      this.retryDelay = 5_000
+      this.retries = 0
+    }
+
+    this.ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data as string) as UIUpdateEvent
+        if (msg.event === 'ui_update') this.onUpdate(msg)
+      } catch { /* ignore malformed frames */ }
+    }
+
+    this.ws.onclose = () => {
+      if (this.shouldConnect && this.retries < this.maxRetries) {
+        this.retries += 1
+        this.cachedToken = null
+        setTimeout(() => { if (this.shouldConnect) this._fetchTokenAndConnect() }, this.retryDelay)
+        this.retryDelay = Math.min(this.retryDelay * 2, this.maxRetryDelay)
+      }
+    }
+  }
+
+  disconnect(): void {
+    this.shouldConnect = false
+    this.ws?.close()
+    this.ws = null
+  }
+}
+
 /** Derive a ws:// / wss:// URL for a given path.
  *
  * In dev: reads NEXT_PUBLIC_SSE_BASE (e.g. "http://localhost:8000") and
